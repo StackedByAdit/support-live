@@ -42,3 +42,21 @@ model User {
 
   messages Message[]
 }
+
+model Conversation {
+  id String @id @default(uuid())
+
+  candidateId String
+  agentId String?
+  supervisorId String
+
+  status Status
+
+  createdAt DateTime @default(now())
+
+  candidate User @relation("CandidateConversations", fields: [candidateId], references: [id])
+  agent User? @relation("AgentConversations", fields: [agentId], references: [id])
+  supervisor User @relation("SupervisorConversations", fields: [supervisorId], references: [id])
+
+  messages Message[]
+}
