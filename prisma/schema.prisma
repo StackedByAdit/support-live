@@ -11,3 +11,34 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  admin
+  supervisor
+  agent
+  candidate
+}
+
+enum Status {
+  open
+  assigned
+  closed
+}
+
+model User {
+  id          String @id @default(uuid())
+  name        String
+  email       String @unique
+  password    String
+  role        Role
+
+  supervisorId String?
+  supervisor   User? @relation("SupervisorAgents", fields: [supervisorId], references: [id])
+  agents       User[] @relation("SupervisorAgents")
+
+  candidateConversations  Conversation[] @relation("CandidateConversations")
+  agentConversations      Conversation[] @relation("AgentConversations")
+  supervisorConversations Conversation[] @relation("SupervisorConversations")
+
+  messages Message[]
+}
