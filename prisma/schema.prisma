@@ -60,3 +60,18 @@ model Conversation {
 
   messages Message[]
 }
+
+model Message {
+  id String @id @default(uuid())
+
+  conversationId String
+  senderId String
+
+  content String
+  senderRole Role
+
+  createdAt DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender User @relation(fields: [senderId], references: [id])
+}
