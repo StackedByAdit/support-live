@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 
 import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { success } from "zod";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -102,6 +103,41 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
 });
 
 app.post("/auth/login", async (req: Request, res: Response) => {
+
+  const result = userSchema.safeParse(req.body);
+
+  if(!result.success){
+    return res.status(400).json({
+      success : false,
+      message : "error logging in"
+    })
+  }
+
+  const { email, password } = result.data;
+
+  const user = await prisma.user.findFirst({
+    where: { email },
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User not found, sign up first",
+    });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+
+  if (!passwordMatch) {
+    return res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      token : token
+    },
+  });
 
 })
 
