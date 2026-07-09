@@ -1,17 +1,16 @@
 import type {Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken"
+import jwt, { type JwtPayload } from "jsonwebtoken"
 import { success } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-interface CustomUser {
-    user : string;
-    id : string;
+interface CustomRequest extends Request{
+    userId : string;
 }
 
 
 
-export function authMiddleware(req: Request, res : Response, next : NextFunction){
+export function authMiddleware(req: CustomRequest, res : Response, next : NextFunction){
 
     const token = req.headers.authorization;
 
@@ -22,6 +21,10 @@ export function authMiddleware(req: Request, res : Response, next : NextFunction
             message : "token missing"
         })
     }
-    const verified = jwt.verify(token, JWT_SECRET);
+    const verified = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
+    req.userId = verified.userId;
+
+
+    next();
 }
