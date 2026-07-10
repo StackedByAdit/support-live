@@ -29,7 +29,7 @@ export function authMiddleware(req: CustomRequest, res: Response, next: NextFunc
 
         console.log(verified);
 
-        req.userId = verified.id;
+        req.userId = verified.userId;
         req.name = verified.name;
         req.email = verified.email;
         req.role = verified.role;
