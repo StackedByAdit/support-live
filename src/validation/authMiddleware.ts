@@ -4,7 +4,7 @@ import { success } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-interface CustomRequest extends Request{
+export interface CustomRequest extends Request{
     userId : string;
 }
 
@@ -23,15 +23,18 @@ export function authMiddleware(req: CustomRequest, res : Response, next : NextFu
             })
         }
         const verified = jwt.verify(token, JWT_SECRET) as JwtPayload;
+
         console.log(verified);
     
-        req.userId = verified.userId;
-    
+        req.userId = verified.id;
+
         next();
+
     } catch (e){
+
         return res.status(400).json({
             success : false,
-            message : "error with tokens"
+            message : "error with token"
         })
     }
 }
