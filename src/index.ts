@@ -223,7 +223,22 @@ app.post(
         });
       }
 
-     
+      const conversation = await prisma.conversation.create({
+        data: {
+          candidateId: req.userId,
+          supervisorId,
+          status: "open",
+        },
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          id: conversation.id,
+          status: conversation.status,
+          supervisorId: conversation.supervisorId,
+        },
+      });
     } catch (err) {
       console.error(err);
 
