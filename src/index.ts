@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { success } from "zod";
-import { authMiddleware } from "./validation/authMiddleware";
+import { authMiddleware, type CustomRequest } from "./validation/authMiddleware";
 import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -114,8 +114,6 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
 app.post("/auth/login", async (req: Request, res: Response) => {
 
   try {
-
-
     const result = loginSchema.safeParse(req.body);
 
     if (!result.success) {
@@ -161,8 +159,17 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
 })
 
-app.get("/auth/me", async (req: Request, res: Response) => {
+app.get("/auth/me", authMiddleware, async (req: CustomRequest, res: Response) => {
 
+  const userId = req.userId;
+
+  console.log(userId);
+  return res.status(200).json({
+    success: true,
+    data : {
+      id : userId
+    }
+  })
 })
 
 app.post("/conversations", async (req: Request, res: Response) => {
