@@ -5,6 +5,9 @@ import bcrypt from "bcrypt";
 import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { success } from "zod";
+import { authMiddleware } from "./validation/authMiddleware";
+import jwt from "jsonwebtoken";
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -102,7 +105,7 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/auth/login", async (req: Request, res: Response) => {
+app.post("/auth/login", authMiddleware, async (req: Request, res: Response) => {
 
   const result = userSchema.safeParse(req.body);
 
@@ -131,6 +134,8 @@ app.post("/auth/login", async (req: Request, res: Response) => {
   if (!passwordMatch) {
     return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
+
+  const token = jwt.sign({id : user.id}, JWT_SECRET);
 
   return res.status(200).json({
     success: true,
