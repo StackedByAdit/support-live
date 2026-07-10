@@ -1,4 +1,4 @@
-import { userSchema } from "./schema/zodSchema";
+import { loginSchema, signupSchema } from "./schema/zodSchema";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 
@@ -7,6 +7,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { success } from "zod";
 import { authMiddleware } from "./validation/authMiddleware";
 import jwt from "jsonwebtoken";
+import { error } from "node:console";
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 const adapter = new PrismaPg({
@@ -24,7 +25,7 @@ app.use(express.json());
 
 app.post("/auth/signup", async (req: Request, res: Response) => {
   try {
-    const result = userSchema.safeParse(req.body);
+    const result = signupSchema.safeParse(req.body);
 
     if (!result.success) {
       return res.status(400).json({
@@ -105,9 +106,11 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/auth/login", authMiddleware, async (req: Request, res: Response) => {
+app.post("/auth/login", async (req: Request, res: Response) => {
 
-  const result = userSchema.safeParse(req.body);
+  const result = loginSchema.safeParse(req.body);
+
+  console.log(result);
 
   if(!result.success){
     return res.status(400).json({
