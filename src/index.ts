@@ -161,13 +161,10 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
 app.get("/auth/me", authMiddleware, async (req: CustomRequest, res: Response) => {
 
-  const userId = req.userId;
-
-  console.log(userId);
   return res.status(200).json({
     success: true,
     data : {
-      id : userId,
+      id : req.userId,
       name : req.name,
       email : req.email,
       role : req.role,
