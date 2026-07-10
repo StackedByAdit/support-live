@@ -167,7 +167,11 @@ app.get("/auth/me", authMiddleware, async (req: CustomRequest, res: Response) =>
   return res.status(200).json({
     success: true,
     data : {
-      id : userId
+      id : userId,
+      name : req.name,
+      email : req.email,
+      role : req.role,
+      supervisorId : req.supervisorId
     }
   })
 })

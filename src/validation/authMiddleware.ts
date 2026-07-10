@@ -13,8 +13,6 @@ export interface CustomRequest extends Request {
     supervisorId?: UUID
 }
 
-
-
 export function authMiddleware(req: CustomRequest, res: Response, next: NextFunction) {
 
     try {
@@ -39,7 +37,7 @@ export function authMiddleware(req: CustomRequest, res: Response, next: NextFunc
         if (verified.supervisorId) {
             req.supervisorId = verified.supervisorId as UUID;
         }
-        
+
         next();
 
     } catch (e) {
