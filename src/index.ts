@@ -110,8 +110,6 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
   const result = loginSchema.safeParse(req.body);
 
-  console.log(result);
-
   if(!result.success){
     return res.status(400).json({
       success : false,
@@ -138,7 +136,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 
-  const token = jwt.sign({id : user.id}, JWT_SECRET);
+  const token = jwt.sign({userId : user.id}, JWT_SECRET);
 
   return res.status(200).json({
     success: true,
