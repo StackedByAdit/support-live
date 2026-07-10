@@ -7,7 +7,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { success } from "zod";
 import { authMiddleware } from "./validation/authMiddleware";
 import jwt from "jsonwebtoken";
-import { error } from "node:console";
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 const adapter = new PrismaPg({
@@ -44,6 +43,13 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
         });
       }
 
+      if (role !== "agent" && supervisorId) {
+        return res.status(400).json({
+          success: false,
+          message: "Only agents can have supervisors"
+        });
+      }
+
       const supervisor = await prisma.user.findUnique({
         where: {
           id: supervisorId,
@@ -72,7 +78,7 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
     if (existing) {
       return res.status(409).json({
         success: false,
-        error: "Email already exists",
+        message: "Email already exists",
       });
     }
 
@@ -101,49 +107,57 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
     });
   }
 });
 
 app.post("/auth/login", async (req: Request, res: Response) => {
 
-  const result = loginSchema.safeParse(req.body);
+  try {
 
-  if(!result.success){
-    return res.status(400).json({
-      success : false,
-      message : "error logging in"
-    })
-  }
 
-  const { email, password } = result.data;
+    const result = loginSchema.safeParse(req.body);
 
-  const user = await prisma.user.findFirst({
-    where: { email },
-  });
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: "error logging in"
+      })
+    }
 
-  if (!user) {
-    return res.status(400).json({
+    const { email, password } = result.data;
+
+    const user = await prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found, sign up first",
+      });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        token: token
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({
       success: false,
-      message: "User not found, sign up first",
+      message: "Internal server error",
     });
   }
-
-  const passwordMatch = await bcrypt.compare(password, user.password);
-
-  if (!passwordMatch) {
-    return res.status(401).json({ success: false, message: "Invalid credentials" });
-  }
-
-  const token = jwt.sign({userId : user.id}, JWT_SECRET);
-
-  return res.status(200).json({
-    success: true,
-    data: {
-      token : token
-    },
-  });
 
 })
 
