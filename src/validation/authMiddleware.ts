@@ -12,19 +12,26 @@ interface CustomRequest extends Request{
 
 export function authMiddleware(req: CustomRequest, res : Response, next : NextFunction){
 
-    const token = req.headers.authorization;
-
-    if(!token){
+    try {
+        const token = req.headers.authorization;
+    
+        if(!token){
+            return res.status(400).json({
+    
+                success: false,
+                message : "token missing"
+            })
+        }
+        const verified = jwt.verify(token, JWT_SECRET) as JwtPayload;
+        console.log(verified);
+    
+        req.userId = verified.userId;
+    
+        next();
+    } catch (e){
         return res.status(400).json({
-
-            success: false,
-            message : "token missing"
+            success : false,
+            message : "error with tokens"
         })
     }
-    const verified = jwt.verify(token, JWT_SECRET) as JwtPayload;
-
-    req.userId = verified.userId;
-
-
-    next();
 }
