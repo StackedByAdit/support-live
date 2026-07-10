@@ -207,7 +207,23 @@ app.post(
         });
       }
 
-      
+      const existingConversation = await prisma.conversation.findFirst({
+        where: {
+          candidateId: req.userId,
+          status: {
+            in: ["open", "assigned"],
+          },
+        },
+      });
+
+      if (existingConversation) {
+        return res.status(409).json({
+          success: false,
+          message: "You already have an active conversation",
+        });
+      }
+
+     
     } catch (err) {
       console.error(err);
 
