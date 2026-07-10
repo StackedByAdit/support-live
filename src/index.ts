@@ -173,9 +173,51 @@ app.get("/auth/me", authMiddleware, async (req: CustomRequest, res: Response) =>
   })
 })
 
-app.post("/conversations", async (req: Request, res: Response) => {
+app.post(
+  "/conversations",
+  authMiddleware,
+  async (req: CustomRequest, res: Response) => {
+    try {
+      if (req.role !== "candidate") {
+        return res.status(403).json({
+          success: false,
+          message: "Only candidates can create conversations",
+        });
+      }
 
-})
+      const { supervisorId } = req.body;
+
+      if (!supervisorId) {
+        return res.status(400).json({
+          success: false,
+          message: "supervisorId is required",
+        });
+      }
+
+      const supervisor = await prisma.user.findUnique({
+        where: {
+          id: supervisorId,
+        },
+      });
+
+      if (!supervisor || supervisor.role !== "supervisor") {
+        return res.status(404).json({
+          success: false,
+          message: "Supervisor not found",
+        });
+      }
+
+      
+    } catch (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
 
 app.post("/conversations/:id/assign", async (req: Request, res: Response) => {
 
