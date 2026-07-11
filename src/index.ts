@@ -1,4 +1,4 @@
-import { loginSchema, signupSchema } from "./schema/zodSchema";
+import { consversationAssignSchema, loginSchema, signupSchema } from "./schema/zodSchema";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 
@@ -249,8 +249,32 @@ app.post(
   }
 );
 
-app.post("/conversations/:id/assign", async (req: Request, res: Response) => {
+app.post("/conversations/:id/assign", authMiddleware, async (req: Request, res: Response) => {
+  const result = consversationAssignSchema.safeParse(req.body);
 
+  if(!result){
+    return res.status(400).json({
+      success : false,
+      message: "agent Id needed"
+    })
+  }
+
+  const agentId = result.data?.agentId
+
+  const find = await prisma.conversation.findFirst({
+    where : {
+      agentId : agentId
+    }
+  })
+
+  if(!find){
+    return res.status(400).json({
+      success : false,
+      message : "no conversation with this agent Id found"
+    })
+  }
+
+  
 })
 
 app.post("/conversations/:id", async (req: Request, res: Response) => {
