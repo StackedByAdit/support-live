@@ -249,7 +249,7 @@ app.post(
   }
 );
 
-app.post("/conversations/:id/assign", authMiddleware, async (req: Request, res: Response) => {
+app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest, res: Response) => {
   const result = consversationAssignSchema.safeParse(req.body);
 
   if(!result){
@@ -260,6 +260,13 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: Request, res: 
   }
 
   const agentId = result.data?.agentId
+
+  if (req.role !== "supervisor") {
+    return res.status(403).json({
+        success: false,
+        message: "Only supervisors can assign conversations"
+    });
+}
 
   const find = await prisma.conversation.findFirst({
     where : {
@@ -274,7 +281,7 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: Request, res: 
     })
   }
 
-  
+
 })
 
 app.post("/conversations/:id", async (req: Request, res: Response) => {
