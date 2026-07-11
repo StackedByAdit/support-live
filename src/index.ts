@@ -240,7 +240,6 @@ app.post(
         },
       });
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         success: false,
