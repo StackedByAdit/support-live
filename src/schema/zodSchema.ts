@@ -14,6 +14,6 @@ export const loginSchema = z.object({
     password : z.string().min(6)
 })
 
-export const consversationAssignSchema = z.object({
+export const conversationAssignSchema = z.object({
     agentId : z.string()
 })
