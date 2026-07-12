@@ -7,6 +7,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { success } from "zod";
 import { authMiddleware, type CustomRequest } from "./validation/authMiddleware";
 import jwt from "jsonwebtoken";
+import { id } from "zod/v4/locales";
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 const adapter = new PrismaPg({
@@ -252,7 +253,7 @@ app.post(
 app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest, res: Response) => {
   const result = consversationAssignSchema.safeParse(req.body);
 
-  if(!result){
+  if(!result.success){
     return res.status(400).json({
       success : false,
       message: "agent Id needed"
@@ -268,13 +269,20 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
     });
 }
 
-  const find = await prisma.conversation.findFirst({
-    where : {
-      agentId : agentId
+  const conversation = await prisma.conversation.findUnique({
+    where: {
+        id: 
     }
-  })
+});
 
-  if(!find){
+if (!conversation) {
+    return res.status(404).json({
+        success: false,
+        message: "Conversation not found"
+    });
+}
+
+  if(!conversation){
     return res.status(400).json({
       success : false,
       message : "no conversation with this agent Id found"
