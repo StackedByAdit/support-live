@@ -24,7 +24,6 @@ const app = express();
 app.use(express.json());
 
 app.post("/auth/signup", async (req: Request, res: Response) => {
-
   try {
     const result = signupSchema.safeParse(req.body);
 
@@ -44,36 +43,34 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
           message: "supervisorId required for agent role",
         });
       }
-    }
 
-    const supervisor = await prisma.user.findUnique({
-      where: {
-        id: supervisorId,
-      },
-    });
-
-    if (!supervisor) {
-      return res.status(404).json({
-        success: false,
-        message: "Supervisor not found",
+      const supervisor = await prisma.user.findUnique({
+        where: {
+          id: supervisorId,
+        },
       });
+
+      if (!supervisor) {
+        return res.status(404).json({
+          success: false,
+          message: "Supervisor not found",
+        });
+      }
+
+      if (supervisor.role !== "supervisor") {
+        return res.status(400).json({
+          success: false,
+          message: "User is not a supervisor",
+        });
+      }
     }
 
-    if (supervisor.role !== "supervisor") {
+    if (role !== "agent" && supervisorId) {
       return res.status(400).json({
         success: false,
-        message: "User is not a supervisor",
+        message: "Only agents can have supervisors",
       });
     }
-
-    // if (role !== "agent" && supervisorId) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: "Only agents can have supervisors"
-    //   });
-    // }
-
-
 
     const existing = await prisma.user.findUnique({
       where: { email },
@@ -114,7 +111,6 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
     });
   }
 });
-
 
 app.post("/auth/login", async (req: Request, res: Response) => {
 
