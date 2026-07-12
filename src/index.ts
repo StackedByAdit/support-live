@@ -251,43 +251,46 @@ app.post(
 );
 
 app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest, res: Response) => {
-  const result = consversationAssignSchema.safeParse(req.body);
 
-  if (!result.success) {
-    return res.status(400).json({
-      success: false,
-      message: "agent Id needed"
-    })
-  }
+  try {
 
-  const agentId = result.data?.agentId
+    const result = consversationAssignSchema.safeParse(req.body);
 
-  if (req.role !== "supervisor") {
-    return res.status(403).json({
-      success: false,
-      message: "Only supervisors can assign conversations"
-    });
-  }
-
-  const conversationId: string = req.params.id! as string;
-
-  const conversation = await prisma.conversation.findUnique({
-    where: {
-      id: conversationId
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: "agent Id needed"
+      })
     }
-  });
 
-  if (!conversation) {
-    return res.status(404).json({
-      success: false,
-      message: "Conversation not found"
+    const agentId = result.data?.agentId
+
+    if (req.role !== "supervisor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only supervisors can assign conversations"
+      });
+    }
+
+    const conversationId: string = req.params.id! as string;
+
+    const conversation = await prisma.conversation.findUnique({
+      where: {
+        id: conversationId
+      }
     });
-  }
 
-  if (!conversation) {
+    if (!conversation) {
+      return res.status(400).json({
+        success: false,
+        message: "no conversation with this agent Id found"
+      })
+    }
+
+  } catch (e) {
     return res.status(400).json({
-      success: false,
-      message: "no conversation with this agent Id found"
+      success : false,
+      message : "internal server error"
     })
   }
 
