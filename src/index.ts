@@ -286,11 +286,30 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
         message: "no conversation with this agent Id found"
       })
     }
+    if (conversation.supervisorId !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "cannot assign agent"
+      });
+    }
+
+    const agent = await prisma.user.findUnique({
+      where: {
+        id: agentId
+      }
+    });
+
+    if (!agent || agent.role !== "agent") {
+      return res.status(404).json({
+        success: false,
+        message: "Agent not found"
+      });
+    }
 
   } catch (e) {
     return res.status(400).json({
-      success : false,
-      message : "internal server error"
+      success: false,
+      message: "internal server error"
     })
   }
 
