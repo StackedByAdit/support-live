@@ -143,7 +143,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id, name : user.name, email : user.email, role : user.role, supervisorId : user.supervisorId}, JWT_SECRET);
+    const token = jwt.sign({ userId: user.id, name: user.name, email: user.email, role: user.role, supervisorId: user.supervisorId }, JWT_SECRET);
 
     return res.status(200).json({
       success: true,
@@ -164,12 +164,12 @@ app.get("/auth/me", authMiddleware, async (req: CustomRequest, res: Response) =>
 
   return res.status(200).json({
     success: true,
-    data : {
-      id : req.userId,
-      name : req.name,
-      email : req.email,
-      role : req.role,
-      supervisorId : req.supervisorId
+    data: {
+      id: req.userId,
+      name: req.name,
+      email: req.email,
+      role: req.role,
+      supervisorId: req.supervisorId
     }
   })
 })
@@ -253,9 +253,9 @@ app.post(
 app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest, res: Response) => {
   const result = consversationAssignSchema.safeParse(req.body);
 
-  if(!result.success){
+  if (!result.success) {
     return res.status(400).json({
-      success : false,
+      success: false,
       message: "agent Id needed"
     })
   }
@@ -264,28 +264,30 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
 
   if (req.role !== "supervisor") {
     return res.status(403).json({
-        success: false,
-        message: "Only supervisors can assign conversations"
+      success: false,
+      message: "Only supervisors can assign conversations"
     });
-}
+  }
+
+  const conversationId: string = req.params.id! as string;
 
   const conversation = await prisma.conversation.findUnique({
     where: {
-        id: 
+      id: conversationId
     }
-});
+  });
 
-if (!conversation) {
+  if (!conversation) {
     return res.status(404).json({
-        success: false,
-        message: "Conversation not found"
+      success: false,
+      message: "Conversation not found"
     });
-}
+  }
 
-  if(!conversation){
+  if (!conversation) {
     return res.status(400).json({
-      success : false,
-      message : "no conversation with this agent Id found"
+      success: false,
+      message: "no conversation with this agent Id found"
     })
   }
 
