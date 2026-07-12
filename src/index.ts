@@ -306,6 +306,31 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
       });
     }
 
+    if (agent.supervisorId !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Agent doesn't belong to you"
+      });
+    }
+
+    const updatedConversation = await prisma.conversation.update({
+      where: {
+        id: conversationId
+      },
+      data: {
+        agentId
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        conversationId: updatedConversation.id,
+        agentId: updatedConversation.agentId,
+        supervisorId: updatedConversation.supervisorId
+      }
+    });
+
   } catch (e) {
     return res.status(400).json({
       success: false,
