@@ -1,4 +1,4 @@
-import { consversationAssignSchema, loginSchema, signupSchema } from "./schema/zodSchema";
+import { conversationAssignSchema, loginSchema, signupSchema } from "./schema/zodSchema";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 
@@ -24,6 +24,7 @@ const app = express();
 app.use(express.json());
 
 app.post("/auth/signup", async (req: Request, res: Response) => {
+
   try {
     const result = signupSchema.safeParse(req.body);
 
@@ -43,34 +44,36 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
           message: "supervisorId required for agent role",
         });
       }
-
-      if (role !== "agent" && supervisorId) {
-        return res.status(400).json({
-          success: false,
-          message: "Only agents can have supervisors"
-        });
-      }
-
-      const supervisor = await prisma.user.findUnique({
-        where: {
-          id: supervisorId,
-        },
-      });
-
-      if (!supervisor) {
-        return res.status(404).json({
-          success: false,
-          message: "Supervisor not found",
-        });
-      }
-
-      if (supervisor.role !== "supervisor") {
-        return res.status(400).json({
-          success: false,
-          message: "User is not a supervisor",
-        });
-      }
     }
+
+    const supervisor = await prisma.user.findUnique({
+      where: {
+        id: supervisorId,
+      },
+    });
+
+    if (!supervisor) {
+      return res.status(404).json({
+        success: false,
+        message: "Supervisor not found",
+      });
+    }
+
+    if (supervisor.role !== "supervisor") {
+      return res.status(400).json({
+        success: false,
+        message: "User is not a supervisor",
+      });
+    }
+
+    // if (role !== "agent" && supervisorId) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Only agents can have supervisors"
+    //   });
+    // }
+
+
 
     const existing = await prisma.user.findUnique({
       where: { email },
@@ -112,6 +115,7 @@ app.post("/auth/signup", async (req: Request, res: Response) => {
   }
 });
 
+
 app.post("/auth/login", async (req: Request, res: Response) => {
 
   try {
@@ -126,7 +130,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
 
     const { email, password } = result.data;
 
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
@@ -143,7 +147,7 @@ app.post("/auth/login", async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id, name: user.name, email: user.email, role: user.role, supervisorId: user.supervisorId }, JWT_SECRET);
+    const token = jwt.sign({ userId: user.id, name: user.name, email: user.email, role: user.role, supervisorId: user.supervisorId }, JWT_SECRET, { expiresIn: "7d" });
 
     return res.status(200).json({
       success: true,
@@ -174,87 +178,85 @@ app.get("/auth/me", authMiddleware, async (req: CustomRequest, res: Response) =>
   })
 })
 
-app.post(
-  "/conversations",
-  authMiddleware,
-  async (req: CustomRequest, res: Response) => {
-    try {
-      if (req.role !== "candidate") {
-        return res.status(403).json({
-          success: false,
-          message: "Only candidates can create conversations",
-        });
-      }
+app.post("/conversations", authMiddleware, async (req: CustomRequest, res: Response) => {
 
-      const { supervisorId } = req.body;
-
-      if (!supervisorId) {
-        return res.status(400).json({
-          success: false,
-          message: "supervisorId is required",
-        });
-      }
-
-      const supervisor = await prisma.user.findUnique({
-        where: {
-          id: supervisorId,
-        },
-      });
-
-      if (!supervisor || supervisor.role !== "supervisor") {
-        return res.status(404).json({
-          success: false,
-          message: "Supervisor not found",
-        });
-      }
-
-      const existingConversation = await prisma.conversation.findFirst({
-        where: {
-          candidateId: req.userId,
-          status: {
-            in: ["open", "assigned"],
-          },
-        },
-      });
-
-      if (existingConversation) {
-        return res.status(409).json({
-          success: false,
-          message: "You already have an active conversation",
-        });
-      }
-
-      const conversation = await prisma.conversation.create({
-        data: {
-          candidateId: req.userId,
-          supervisorId,
-          status: "open",
-        },
-      });
-
-      return res.status(201).json({
-        success: true,
-        data: {
-          id: conversation.id,
-          status: conversation.status,
-          supervisorId: conversation.supervisorId,
-        },
-      });
-    } catch (err) {
-
-      return res.status(500).json({
+  try {
+    if (req.role !== "candidate") {
+      return res.status(403).json({
         success: false,
-        message: "Internal server error",
+        message: "Only candidates can create conversations",
       });
     }
+
+    const { supervisorId } = req.body;
+
+    if (!supervisorId) {
+      return res.status(400).json({
+        success: false,
+        message: "supervisorId is required",
+      });
+    }
+
+    const supervisor = await prisma.user.findUnique({
+      where: {
+        id: supervisorId,
+      },
+    });
+
+    if (!supervisor || supervisor.role !== "supervisor") {
+      return res.status(404).json({
+        success: false,
+        message: "Supervisor not found",
+      });
+    }
+
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        candidateId: req.userId,
+        status: {
+          in: ["open", "assigned"],
+        },
+      },
+    });
+
+    if (existingConversation) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have an active conversation",
+      });
+    }
+
+    const conversation = await prisma.conversation.create({
+      data: {
+        candidateId: req.userId,
+        supervisorId,
+        status: "open",
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: conversation.id,
+        status: conversation.status,
+        supervisorId: conversation.supervisorId,
+      },
+    });
+  } catch (err) {
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
+}
 );
 
 app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest, res: Response) => {
 
   try {
 
-    const result = consversationAssignSchema.safeParse(req.body);
+    const result = conversationAssignSchema.safeParse(req.body);
 
     if (!result.success) {
       return res.status(400).json({
@@ -281,9 +283,9 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
     });
 
     if (!conversation) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
-        message: "no conversation with this agent Id found"
+        message: "Conversation not found"
       })
     }
     if (conversation.supervisorId !== req.userId) {
@@ -332,7 +334,7 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
     });
 
   } catch (e) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: "internal server error"
     })
