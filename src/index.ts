@@ -332,11 +332,11 @@ app.post("/conversations/:id/assign", authMiddleware, async (req: CustomRequest,
   } catch (e) {
     return res.status(500).json({
       success: false,
-      message: "internal server error"
+      message: "internal server error",
+      error : e
     })
   }
-
-
+  
 })
 
 app.post("/conversations/:id", async (req: Request, res: Response) => {
